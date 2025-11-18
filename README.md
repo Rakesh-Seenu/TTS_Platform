@@ -35,36 +35,25 @@ The application follows a standard client-server architecture where the Flask ba
 | **Backend** | Python, **Flask** | Serves static files, initializes the Groq client, and proxies the TTS request. |
 | **TTS Engine** | **Groq Python SDK** | Executes the Text-to-Speech generation request using the user's key. |
 
-### Generation Flow (Mermaid Diagram)
+### Generation Flow
 
 This diagram illustrates the secure, key-proxied process of generating audio.
 
 ```mermaid
-graph TD
-    subgraph Client (Browser)
-        A[1. User Enters Text & Key] --> B(2. script.js: Reads Key from LocalStorage);
-        B --> C{3. POST /api/generate-speech};
-    end
-    
-    subgraph Flask Server (app.py)
-        C --> D[4. Receives Text, Model, Voice & User Key];
-        D --> E(5. Initializes Groq Client with User Key);
-        E --> F[6. Sends TTS Request to Groq Cloud];
-    end
-    
-    subgraph Groq Cloud (TTS Service)
-        F --> G[7. Generates WAV Audio Data];
-        G --> H[8. Sends WAV Data to Flask Server];
-    end
-    
-    subgraph Flask Server (app.py)
-        H --> I{9. Streams Audio File to Browser};
-    end
-    
-    subgraph Client (Browser)
-        I --> J[10. Receives WAV Data];
-        J --> K[11. Displays Audio Player & Download Link];
-    end
+sequenceDiagram
+    actor Client
+    participant FlaskApp
+    participant GroqAPI
+
+    Client ->> Client: Input & Save Processing Key (Local Storage)
+    Client ->> FlaskApp: POST /api/generate-speech (Text, Key, Model, Voice)
+    FlaskApp ->> FlaskApp: Validate Key & Text
+    FlaskApp ->> GroqAPI: TTS Request (Text, Model, Voice)
+    GroqAPI -->> GroqAPI: Generate WAV Audio Data
+    GroqAPI -->> FlaskApp: WAV Audio Data Stream
+    FlaskApp ->> FlaskApp: Store Temp File, Calculate Time & Size
+    FlaskApp -->> Client: Stream WAV File (with X-Headers)
+    Client ->> Client: Display Player & Download Link
 ```
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python)
